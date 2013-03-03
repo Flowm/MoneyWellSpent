@@ -48,22 +48,8 @@ class MoneyWellSpent
   end
 
   def self.parseopts()
-    # Settings
-    # Reading the default configuration file at ~/.moneywellspentrc
-    configf = {}
-    f = File.expand_path("~/.moneywellspentrc")
-    if File.exist?(f)
-      begin
-        $log.debug "Loading configuration file #{f}"
-        configf = YAML.load(File.read(f))
-      rescue
-        $log.warn "Error loading configuration file #{f}."
-        $log.info e
-        exit 1
-      end
-    else
-      $log.info "No configuration file #{f} found."
-    end
+    # Option/ configuration parsing
+
     # Parse the command line options
     attrs = {}
     options = OptionParser.new do |opts|
@@ -100,6 +86,21 @@ class MoneyWellSpent
     end
     options.parse!
 
+    # Read the default configuration file at ~/.moneywellspentrc
+    configf = {}
+    f = File.expand_path("~/.moneywellspentrc")
+    if File.exist?(f)
+      begin
+        $log.debug "Loading configuration file #{f}"
+        configf = YAML.load(File.read(f))
+      rescue => e
+        $log.warn "Error loading configuration file #{f}."
+        $log.info e.message
+        exit 1
+      end
+    else
+      $log.info "No configuration file #{f} found."
+    end
     # Make sure configf["default"] exists
     configf["default"] ||= {}
     @@cfg = configf["default"].merge(attrs)
@@ -125,7 +126,7 @@ class MoneyWellSpent
       @@cfg[:site] = "amazon.de"
     end
 
-    # Determine URL
+    # Determine the URL
     if @@cfg[:site] == "amazon.de"
       @@cfg[:url] = "https://www.amazon.de/gp/css/order-history?opt=ab&" +
         "digitalOrders=1&unifiedOrders=1&orderFilter=year-#{@@cfg[:year]}"
