@@ -5,6 +5,11 @@ require 'rubygems'
 require 'mechanize'
 require 'optparse'
 require 'yaml'
+require 'logger'
+
+# Logger
+$log = Logger.new(STDOUT)
+$log.level = Logger::WARN
 
 class MoneyWellSpent
   def self.run()
@@ -21,10 +26,10 @@ class MoneyWellSpent
     login_form.email = @@cfg[:login]
     login_form.password = @@cfg[:password]
 
-    puts "Logging in"
+    $log.info "Logging in to #{@@cfg[:site]}"
     page = agent.submit(login_form, login_form.buttons.last)
 
-    print "Retrieving Orderhistory"
+    print "Retrieving order history"
     arr=[]
     arr = page.parser.xpath('//*[@class="price"]').xpath('text()').to_a
     while !(page.link_with(:text => 'Weiter »').nil?)
@@ -49,13 +54,15 @@ class MoneyWellSpent
     f = File.expand_path("~/.moneywellspentrc")
     if File.exist?(f)
       begin
-        puts "Loading configuration file #{f}"
+        $log.debug "Loading configuration file #{f}"
         configf = YAML.load(File.read(f))
       rescue
-        warn "Error loading configuration file #{f}. Ignoring it."
-        warn e
+        $log.warn "Error loading configuration file #{f}."
+        $log.info e
         exit 1
       end
+    else
+      $log.info "No configuration file #{f} found."
     end
     # Parse the command line options
     attrs = {}
@@ -80,6 +87,12 @@ class MoneyWellSpent
         "Currently only Amazon.de is supproted") do |site|
         attrs[:site] = site
       end
+      opts.on("-d", "--debug", "Enable debug output") do
+        $log.level = Logger::DEBUG
+      end
+      opts.on("-v", "--verbose", "Enable verbose output") do
+        $log.level = Logger::INFO
+      end
       opts.on("-h", "--help", "Show this help") do
         puts options
         exit 0
@@ -93,22 +106,22 @@ class MoneyWellSpent
 
     # Ask for the settings if not given via command line or configuration file
     unless @@cfg[:login]
-      warn "No logininfo given"
+      $log.warn "No logininfo given"
       puts options
       exit 2
     end
     unless @@cfg[:password]
-      warn "No password given"
+      $log.warn "No password given"
       puts options
       exit 2
     end
     unless @@cfg[:year]
-      warn "No year given"
+      $log.warn "No year given"
       puts options
       exit 2
     end
     unless @@cfg[:site]
-      warn "No site given using amazon.de as default"
+      $log.info "No site given using amazon.de as default"
       @@cfg[:site] = "amazon.de"
     end
 
