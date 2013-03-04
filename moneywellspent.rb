@@ -5,11 +5,16 @@ require 'rubygems'
 require 'mechanize'
 require 'optparse'
 require 'yaml'
+require 'highline/import'
 require 'logger'
 
 # Logger
 $log = Logger.new(STDOUT)
 $log.level = Logger::WARN
+$log.formatter = proc do |severity, datetime, progname, msg|
+  "#{msg}\n"
+end
+
 
 class MoneyWellSpent
   def self.run()
@@ -26,7 +31,7 @@ class MoneyWellSpent
     login_form.email = @@cfg[:login]
     login_form.password = @@cfg[:password]
 
-    $log.info "Logging in to #{@@cfg[:site]}"
+    puts "Logging in to #{@@cfg[:site]}"
     page = agent.submit(login_form, login_form.buttons.last)
 
     print "Retrieving order history"
@@ -106,24 +111,27 @@ class MoneyWellSpent
     @@cfg = configf["default"].merge(attrs)
 
     # Ask for the settings if not given via command line or configuration file
+    unless @@cfg[:site]
+      $log.debug "No site given using amazon.de as default"
+      @@cfg[:site] = "amazon.de"
+    end
     unless @@cfg[:login]
-      $log.warn "No logininfo given"
-      puts options
-      exit 2
+      $log.debug "No logininfo given, asking"
+      @@cfg[:login] = ask("Enter your #{@@cfg[:site]} username:  ") { |q|
+        q.echo = true
+      }
     end
     unless @@cfg[:password]
-      $log.warn "No password given"
-      puts options
-      exit 2
+      $log.debug "No password given, asking"
+      @@cfg[:password] = ask("Enter your #{@@cfg[:site]} password:  ") { |q|
+        q.echo = "*"
+      }
     end
     unless @@cfg[:year]
-      $log.warn "No year given"
-      puts options
-      exit 2
-    end
-    unless @@cfg[:site]
-      $log.info "No site given using amazon.de as default"
-      @@cfg[:site] = "amazon.de"
+      $log.debug "No year given, asking"
+      @@cfg[:year] = ask("Enter the year to be summed up: ") { |q|
+        q.echo = true
+      }
     end
 
     # Determine the URL
