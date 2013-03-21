@@ -45,7 +45,11 @@ class MoneyWellSpent
 
     sum=0
     arr.each do |price|
-      value = price.content.split(' ')[1].gsub(/\./, '').gsub(/,/, '.').to_f
+      if @@cfg[:site] == "amazon.de"
+        value = price.content.split(' ')[1].gsub(/\./, '').gsub(/,/, '.').to_f
+      elsif @@cfg[:site] == "amazon.com"
+        value = price.content.gsub(/\$/, '').to_f
+      end
       sum += value
     end
     puts
@@ -137,7 +141,13 @@ class MoneyWellSpent
     # Determine the URL
     if @@cfg[:site] == "amazon.de"
       @@cfg[:url] = "https://www.amazon.de/gp/css/order-history?opt=ab&" +
-        "digitalOrders=1&unifiedOrders=1&orderFilter=year-#{@@cfg[:year]}"
+        "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
+    elsif @@cfg[:site] == "amazon.com"
+      @@cfg[:url] = "https://www.amazon.com/gp/css/order-history?opt=ab&" +
+        "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
+    else
+        $log.warn "Invalid site specified"
+        exit 1
     end
   end
 end

@@ -1,2 +1,5 @@
-Add support for amazon.com and amazon.co.uk
+Add warning and help message if gems are missing
+Add support for multiple pages on amazon.com
+Add support for amazon.co.uk
+Allow to specify the site with shorter strings (de for amazon.de)
 Command line option to supply the path of the configfile
