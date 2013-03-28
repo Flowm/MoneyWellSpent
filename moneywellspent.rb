@@ -31,7 +31,7 @@ class MoneyWellSpent
     login_form.email = @@cfg[:login]
     login_form.password = @@cfg[:password]
 
-    puts "Logging in to #{@@cfg[:site]}"
+    puts "Logging in to amazon.#{@@cfg[:site]}"
     page = agent.submit(login_form, login_form.buttons.last)
 
     print "Retrieving order history"
@@ -45,15 +45,22 @@ class MoneyWellSpent
 
     sum=0
     arr.each do |price|
-      if @@cfg[:site] == "amazon.de"
+      if %w(de fr).include? @@cfg[:site]
         value = price.content.split(' ')[1].gsub(/\./, '').gsub(/,/, '.').to_f
-      elsif @@cfg[:site] == "amazon.com"
+      elsif %w(com).include? @@cfg[:site]
+        value = price.content.gsub(/\$/, '').to_f
+      elsif %w(co.uk).include? @@cfg[:site]
         value = price.content.gsub(/\$/, '').to_f
       end
       sum += value
     end
     puts
     puts sum.round(2)
+
+    if arr.empty?
+      $log.warn "Error retreiving items or no orders on" +
+        "amazon.#{@@cfg[:site]} during #{@@cfg[:year]}"
+    end
   end
 
   def self.parseopts()
@@ -116,8 +123,10 @@ class MoneyWellSpent
 
     # Ask for the settings if not given via command line or configuration file
     unless @@cfg[:site]
-      $log.debug "No site given using amazon.de as default"
-      @@cfg[:site] = "amazon.de"
+      $log.debug "No site given, asking"
+      @@cfg[:site] = ask("Enter the site to be searched:  ") { |q|
+        q.echo = true
+      }
     end
     unless @@cfg[:login]
       $log.debug "No logininfo given, asking"
@@ -139,17 +148,31 @@ class MoneyWellSpent
     end
 
     # Site specific settings (URL + next_button) 
-    if @@cfg[:site] == "amazon.de"
+    if %w(amazon.de amazn.de de).include? @@cfg[:site]
       @@cfg[:url] = "https://www.amazon.de/gp/css/order-history?opt=ab&" +
         "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
       @@cfg[:next] = "Weiter"
-    elsif @@cfg[:site] == "amazon.com"
+      @@cfg[:site] = "de"
+    elsif %w(amazon.com amazn.com com us).include? @@cfg[:site]
       @@cfg[:url] = "https://www.amazon.com/gp/css/order-history?opt=ab&" +
         "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
       @@cfg[:next] = "Next"
+      @@cfg[:site] = "com"
+    elsif %w(amazon.co.uk amazn.co.uk co.uk uk).include? @@cfg[:site]
+      @@cfg[:url] = "https://www.amazon.co.uk/gp/css/order-history?opt=ab&" +
+        "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
+      @@cfg[:next] = "Next"
+      @@cfg[:site] = "co.uk"
+    elsif %w(amazon.fr amazn.fr fr).include? @@cfg[:site]
+      @@cfg[:url] = "https://www.amazon.fr/gp/css/order-history?opt=ab&" +
+        "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
+      @@cfg[:next] = "Suivant"
+      @@cfg[:site] = "fr"
     else
-        $log.warn "Invalid site specified"
-        exit 1
+      valid_sites = %w([amazon.]de [amazon.]com [amazon.]co.uk [amazon].fr)
+      $log.warn "Invalid site specified. Available sites:"
+      $log.warn "\t" + valid_sites.join(" ")
+      exit 1
     end
   end
 end
