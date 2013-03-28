@@ -1,5 +1,6 @@
 # Example configuration file
 default:
+  :site: amazon.de
   :login: your.email@example.org
   :password: YourPassword
-  :site: amazon.de
+  :year: 2013
