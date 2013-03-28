@@ -1,3 +1,5 @@
 Add warning and help message if gems are missing
+Check for successful login
 Add option to sum up all years
+Add currency sign to the final result
 Command line option to supply the path of the configfile
