@@ -124,7 +124,7 @@ class MoneyWellSpent
     # Ask for the settings if not given via command line or configuration file
     unless @@cfg[:site]
       $log.debug "No site given, asking"
-      @@cfg[:site] = ask("Enter the site to be searched:  ") { |q|
+      @@cfg[:site] = ask("Enter the site to be summed up:  ") { |q|
         q.echo = true
       }
     end
@@ -142,30 +142,22 @@ class MoneyWellSpent
     end
     unless @@cfg[:year]
       $log.debug "No year given, asking"
-      @@cfg[:year] = ask("Enter the year to be summed up: ") { |q|
+      @@cfg[:year] = ask("Enter the year to be summed up:  ") { |q|
         q.echo = true
       }
     end
 
     # Site specific settings (URL + next_button) 
     if %w(amazon.de amazn.de de).include? @@cfg[:site]
-      @@cfg[:url] = "https://www.amazon.de/gp/css/order-history?opt=ab&" +
-        "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
       @@cfg[:next] = "Weiter"
       @@cfg[:site] = "de"
     elsif %w(amazon.com amazn.com com us).include? @@cfg[:site]
-      @@cfg[:url] = "https://www.amazon.com/gp/css/order-history?opt=ab&" +
-        "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
       @@cfg[:next] = "Next"
       @@cfg[:site] = "com"
     elsif %w(amazon.co.uk amazn.co.uk co.uk uk).include? @@cfg[:site]
-      @@cfg[:url] = "https://www.amazon.co.uk/gp/css/order-history?opt=ab&" +
-        "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
       @@cfg[:next] = "Next"
       @@cfg[:site] = "co.uk"
     elsif %w(amazon.fr amazn.fr fr).include? @@cfg[:site]
-      @@cfg[:url] = "https://www.amazon.fr/gp/css/order-history?opt=ab&" +
-        "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
       @@cfg[:next] = "Suivant"
       @@cfg[:site] = "fr"
     else
@@ -174,6 +166,8 @@ class MoneyWellSpent
       $log.warn "\t" + valid_sites.join(" ")
       exit 1
     end
+    @@cfg[:url] = "https://www.amazon.#{@@cfg[:site]}/gp/css/order-history?" +
+      "opt=ab&digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
   end
 end
 
