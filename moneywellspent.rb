@@ -37,8 +37,8 @@ class MoneyWellSpent
     print "Retrieving order history"
     arr=[]
     arr = page.parser.xpath('//*[@class="price"]').xpath('text()').to_a
-    while !(page.link_with(:text => 'Weiter »').nil?)
-      page = page.link_with(:text => 'Weiter »').click
+    while !(page.link_with(:text => "#{@@cfg[:next]} »").nil?)
+      page = page.link_with(:text => "#{@@cfg[:next]} »").click
       arr.concat(page.parser.xpath('//*[@class="price"]').xpath('text()').to_a)
       print "."
     end
@@ -138,13 +138,15 @@ class MoneyWellSpent
       }
     end
 
-    # Determine the URL
+    # Site specific settings (URL + next_button) 
     if @@cfg[:site] == "amazon.de"
       @@cfg[:url] = "https://www.amazon.de/gp/css/order-history?opt=ab&" +
         "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
+      @@cfg[:next] = "Weiter"
     elsif @@cfg[:site] == "amazon.com"
       @@cfg[:url] = "https://www.amazon.com/gp/css/order-history?opt=ab&" +
         "digitalOrders=1&unifiedOrders=0&orderFilter=year-#{@@cfg[:year]}"
+      @@cfg[:next] = "Next"
     else
         $log.warn "Invalid site specified"
         exit 1
