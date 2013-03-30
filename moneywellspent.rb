@@ -2,10 +2,11 @@
 # encoding: utf-8
 
 require 'rubygems'
-require 'mechanize'
 require 'optparse'
 require 'yaml'
 require 'highline/import'
+require 'mechanize'
+require 'bigdecimal'
 require 'logger'
 
 # Logger
@@ -35,7 +36,7 @@ class MoneyWellSpent
     page = agent.submit(login_form, login_form.buttons.last)
 
     print "Retrieving order history"
-    arr=[]
+    arr = []
     arr = page.parser.xpath('//*[@class="price"]').xpath('text()').to_a
 
     if arr.empty?
@@ -50,19 +51,19 @@ class MoneyWellSpent
       print "."
     end
 
-    sum=0
+    sum = BigDecimal(0)
     arr.each do |price|
       if %w(de fr).include? @@cfg[:site]
-        value = price.content.split(' ')[1].gsub(/\./, '').gsub(/,/, '.').to_f
+        value = BigDecimal(price.content.split(' ')[1].gsub(/\./, '').gsub(/,/, '.'))
       elsif %w(com).include? @@cfg[:site]
-        value = price.content.gsub(/\$/, '').to_f
+        value = BigDecimal(price.content.gsub(/\$/, ''))
       elsif %w(co.uk).include? @@cfg[:site]
-        value = price.content.gsub(/\$/, '').to_f
+        value = BigDecimal(price.content.gsub(/\$/, ''))
       end
       sum += value
     end
-    puts
-    puts sum.round(2)
+    puts 
+    puts sum.truncate(2).to_s('F')
   end
 
   def self.parseopts()
