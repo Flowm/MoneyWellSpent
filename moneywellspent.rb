@@ -37,6 +37,13 @@ class MoneyWellSpent
     print "Retrieving order history"
     arr=[]
     arr = page.parser.xpath('//*[@class="price"]').xpath('text()').to_a
+
+    if arr.empty?
+      $log.warn "Error retreiving items or no orders on" +
+        "amazon.#{@@cfg[:site]} during #{@@cfg[:year]}"
+      exit 1
+    end
+
     while !(page.link_with(:text => "#{@@cfg[:next]} »").nil?)
       page = page.link_with(:text => "#{@@cfg[:next]} »").click
       arr.concat(page.parser.xpath('//*[@class="price"]').xpath('text()').to_a)
@@ -56,11 +63,6 @@ class MoneyWellSpent
     end
     puts
     puts sum.round(2)
-
-    if arr.empty?
-      $log.warn "Error retreiving items or no orders on" +
-        "amazon.#{@@cfg[:site]} during #{@@cfg[:year]}"
-    end
   end
 
   def self.parseopts()
