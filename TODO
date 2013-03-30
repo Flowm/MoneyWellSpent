@@ -3,3 +3,4 @@ Check for successful login
 Add option to sum up all years
 Add currency sign to the final result
 Command line option to supply the path of the configfile
+Improve console output and usage of logger
