@@ -40,8 +40,9 @@ class MoneyWellSpent
     arr = page.parser.xpath('//*[@class="price"]').xpath('text()').to_a
 
     if arr.empty?
-      $log.warn "Error retreiving items or no orders on" +
-        "amazon.#{@@cfg[:site]} during #{@@cfg[:year]}"
+      $log.warn "\nError retreiving orders or no orders available on " +
+        "amazon.#{@@cfg[:site]} during #{@@cfg[:year]}\n" +
+        "Is the supplied password correct?"
       exit 1
     end
 
@@ -51,7 +52,7 @@ class MoneyWellSpent
       print "."
     end
 
-    sum = BigDecimal(0)
+    sum = BigDecimal("0")
     arr.each do |price|
       if %w(de fr).include? @@cfg[:site]
         value = BigDecimal(price.content.split(' ')[1].gsub(/\./, '').gsub(/,/, '.'))
