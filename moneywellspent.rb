@@ -54,11 +54,11 @@ class MoneyWellSpent
     sum = BigDecimal("0")
     arr.each do |price|
       if %w(de fr).include? @@cfg[:site]
-        value = BigDecimal(price.content.scan(/EUR\s(\d+,\d\d)/).first.first.gsub(/,/, '.'))
+        value = BigDecimal(price.content.gsub(/\./,'').scan(/EUR\s(\d+,\d\d)/).first.first.gsub(/,/, '.'))
       elsif %w(com).include? @@cfg[:site]
-        value = BigDecimal(price.content.scan(/\$(\d+\.\d\d)/).first.first)
+        value = BigDecimal(price.content.gsub(/,/,'').scan(/\$(\d+\.\d\d)/).first.first)
       elsif %w(co.uk).include? @@cfg[:site]
-        value = BigDecimal(price.content.scan(/\£(\d+\.\d\d)/).first.first)
+        value = BigDecimal(price.content.gsub(/,/,'').scan(/\£(\d+\.\d\d)/).first.first)
       end
       sum += value
     end
