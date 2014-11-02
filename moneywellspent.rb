@@ -36,9 +36,8 @@ class MoneyWellSpent
     page = agent.submit(login_form, login_form.buttons.last)
 
     print "Retrieving order history"
-    arr = []
-    arr = page.parser.xpath('//*[@class="price"]').xpath('text()').to_a
-
+    xpath = '//*[@class="a-column a-span2"]/*[@class="a-row a-size-base"]/span[@class="a-color-secondary value"]'
+    arr = page.parser.xpath(xpath).children.to_a
     if arr.empty?
       $log.warn "\nError retreiving orders or no orders available on " +
         "amazon.#{@@cfg[:site]} during #{@@cfg[:year]}\n" +
@@ -46,24 +45,24 @@ class MoneyWellSpent
       exit 1
     end
 
-    while !(page.link_with(:text => "#{@@cfg[:next]} »").nil?)
-      page = page.link_with(:text => "#{@@cfg[:next]} »").click
-      arr.concat(page.parser.xpath('//*[@class="price"]').xpath('text()').to_a)
+    while !(page.link_with(:text => "#{@@cfg[:next]}→").nil?)
+      page = page.link_with(:text => "#{@@cfg[:next]}→").click
+      arr.concat(page.parser.xpath(xpath).children.to_a)
       print "."
     end
 
     sum = BigDecimal("0")
     arr.each do |price|
       if %w(de fr).include? @@cfg[:site]
-        value = BigDecimal(price.content.split(' ')[1].gsub(/\./, '').gsub(/,/, '.'))
+        value = BigDecimal(price.content.scan(/EUR\s(\d+,\d\d)/).first.first.gsub(/,/, '.'))
       elsif %w(com).include? @@cfg[:site]
-        value = BigDecimal(price.content.gsub(/\$/, ''))
+        value = BigDecimal(price.content.scan(/\$(\d+\.\d\d)/).first.first)
       elsif %w(co.uk).include? @@cfg[:site]
-        value = BigDecimal(price.content.gsub(/\$/, ''))
+        value = BigDecimal(price.content.scan(/\£(\d+\.\d\d)/).first.first)
       end
       sum += value
     end
-    puts 
+    puts
     puts sum.truncate(2).to_s('F')
   end
 
@@ -151,7 +150,7 @@ class MoneyWellSpent
       }
     end
 
-    # Site specific settings (URL + next_button) 
+    # Site specific settings (URL + next_button)
     if %w(amazon.de amazn.de de).include? @@cfg[:site]
       @@cfg[:next] = "Weiter"
       @@cfg[:site] = "de"
