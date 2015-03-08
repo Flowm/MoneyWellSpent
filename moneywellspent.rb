@@ -98,13 +98,36 @@ class MoneyWellSpent
       data << [date, price]
     end
 
+    # Sort orders by date (data.reverse! would do the same in theory)
+    data.sort! { |a,b| a.first <=> b.first }
+
     # Output
     sum = BigDecimal("0")
     data.each do |date, price|
-      puts "#{date}\t#{'%6.2f'%price}"
+      puts "#{date}   #{'%10.2f'%price}"
       sum += price
     end
-    puts "Overall #{@@cfg[:year]}:\t#{'%6.2f'%sum}"
+    puts "Overall #{@@cfg[:year]}:#{'%10.2f'%sum}"
+
+    # CSV
+    if @@cfg[:csv]
+      $log.info "\n"
+      filepath = File.expand_path(@@cfg[:csv])
+      begin
+        $log.debug "Appending data to #{filepath}\n"
+        file = File.new(filepath, 'a')
+        data.each do |date, price|
+          file.write "#{date};#{'%.2f'%price}\n"
+        end
+      rescue => e
+        $log.fatal "Error writing csv #{filepath}.\n"
+        $log.warn e.message
+        exit 1
+      ensure
+        file.close unless file.nil?
+      end
+      $log.info "Data successfully exported in csv format to #{filepath}\n"
+    end
   end
 
   def self.parseopts()
@@ -130,13 +153,17 @@ class MoneyWellSpent
       end
       opts.on("-s [SITE]", "--site [SITE]",
         "Specify the site to be queried. " +
-        "Currently only Amazon.de is supproted") do |site|
+        "Currently amazon.{com,de,fr,co.uk} are supported") do |site|
         attrs[:site] = site
+      end
+      opts.on("-c [CSV]", "--csv [CSV]",
+        "Export data to CSV") do |csv|
+        attrs[:csv] = csv
       end
       opts.on("-d", "--debug", "Enable debug output") do
         $log.level = Logger::DEBUG
       end
-      opts.on("-q", "--quiet", "Enable verbose output") do
+      opts.on("-q", "--quiet", "Show less information") do
         $log.level = Logger::WARN
       end
       opts.on("-h", "--help", "Show this help") do
