@@ -11,9 +11,9 @@ require 'logger'
 
 # Logger
 $log = Logger.new(STDOUT)
-$log.level = Logger::WARN
+$log.level = Logger::INFO
 $log.formatter = proc do |severity, datetime, progname, msg|
-  "#{msg}\n"
+  "#{msg}"
 end
 
 
@@ -21,6 +21,7 @@ class MoneyWellSpent
   def self.run()
     parseopts
 
+    # Init
     agent = Mechanize.new
     agent.user_agent_alias = 'Linux Firefox'
     agent.cookie_jar.clear!
@@ -32,38 +33,78 @@ class MoneyWellSpent
     login_form.email = @@cfg[:login]
     login_form.password = @@cfg[:password]
 
-    puts "Logging in to amazon.#{@@cfg[:site]}"
+    # Login
+    $log.info "Logging in to amazon.#{@@cfg[:site]}\n"
     page = agent.submit(login_form, login_form.buttons.last)
 
-    print "Retrieving order history"
-    xpath = '//*[@class="a-column a-span2"]/*[@class="a-row a-size-base"]/span[@class="a-color-secondary value"]'
-    arr = page.parser.xpath(xpath).children.to_a
-    if arr.empty?
+    # Get first page of orders
+    $log.info "Retrieving order history"
+    xpath = '//div[@class="a-box a-color-offset-background order-info"]//div[@class="a-fixed-right-grid-col a-col-left"]'
+    orders = page.parser.xpath(xpath).to_a
+    if orders.empty?
       $log.warn "\nError retreiving orders or no orders available on " +
         "amazon.#{@@cfg[:site]} during #{@@cfg[:year]}\n" +
-        "Is the supplied password correct?"
+        "Is the supplied password correct?\n"
       exit 1
     end
 
+    # Get remaining pages
     while !(page.link_with(:text => "#{@@cfg[:next]}→").nil?)
       page = page.link_with(:text => "#{@@cfg[:next]}→").click
-      arr.concat(page.parser.xpath(xpath).children.to_a)
-      print "."
+      orders.concat(page.parser.xpath(xpath).to_a)
+      print "." if $log.info?
+    end
+    $log.info "\n\n"
+
+    # Parse order xml
+    strdata = []
+    orders.each do |order|
+      strdata << order.xpath('./div/div/div[@class="a-row a-size-base"]/span[@class="a-color-secondary value"]').children.to_a.map do |val|
+        val.text.gsub("\n", ' ').squeeze(' ').strip
+      end
     end
 
-    sum = BigDecimal("0")
-    arr.each do |price|
-      if %w(de fr).include? @@cfg[:site]
-        value = BigDecimal(price.content.gsub(/\./,'').scan(/EUR\s(\d+,\d\d)/).first.first.gsub(/,/, '.'))
-      elsif %w(com).include? @@cfg[:site]
-        value = BigDecimal(price.content.gsub(/,/,'').scan(/\$(\d+\.\d\d)/).first.first)
-      elsif %w(co.uk).include? @@cfg[:site]
-        value = BigDecimal(price.content.gsub(/,/,'').scan(/\£(\d+\.\d\d)/).first.first)
+    # Delocalization
+    data = []
+    strdata.each do |strdate, strprice|
+      # Date delocalization
+      if %w(de).include? @@cfg[:site]
+        strdate.gsub!(/Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember/,
+                   'Januar' => 'January',
+                   'Februar' => 'February',
+                   'März' => 'March',
+                   'April' => 'April',
+                   'Mai' => 'May',
+                   'Juni' => 'June',
+                   'Juli' => 'July',
+                   'August' => 'August',
+                   'September' => 'September',
+                   'Oktober' => 'October',
+                   'November' => 'November',
+                   'Dezember' => 'December')
       end
-      sum += value
+      date = Date.parse(strdate)
+
+      # Prize delocalization
+      if %w(de fr).include? @@cfg[:site]
+        strprice = strprice.gsub(/\./,'').scan(/EUR\s(\d+,\d\d)/).first.first.gsub(/,/, '.')
+      elsif %w(com).include? @@cfg[:site]
+        strprice = strprice.gsub(/,/,'').scan(/\$(\d+\.\d\d)/).first.first
+      elsif %w(co.uk).include? @@cfg[:site]
+        strprice = strprice.gsub(/,/,'').scan(/\£(\d+\.\d\d)/).first.first
+      end
+      price = BigDecimal(strprice)
+
+      data << [date, price]
     end
-    puts
-    puts sum.truncate(2).to_s('F')
+
+    # Output
+    sum = BigDecimal("0")
+    data.each do |date, price|
+      puts "#{date}\t#{'%6.2f'%price}"
+      sum += price
+    end
+    puts "Overall #{@@cfg[:year]}:\t#{'%6.2f'%sum}"
   end
 
   def self.parseopts()
@@ -95,8 +136,8 @@ class MoneyWellSpent
       opts.on("-d", "--debug", "Enable debug output") do
         $log.level = Logger::DEBUG
       end
-      opts.on("-v", "--verbose", "Enable verbose output") do
-        $log.level = Logger::INFO
+      opts.on("-q", "--quiet", "Enable verbose output") do
+        $log.level = Logger::WARN
       end
       opts.on("-h", "--help", "Show this help") do
         puts options
@@ -110,15 +151,15 @@ class MoneyWellSpent
     f = File.expand_path("~/.moneywellspentrc")
     if File.exist?(f)
       begin
-        $log.debug "Loading configuration file #{f}"
+        $log.debug "Loading configuration file #{f}\n"
         configf = YAML.load(File.read(f))
       rescue => e
-        $log.warn "Error loading configuration file #{f}."
+        $log.warn "Error loading configuration file #{f}.\n"
         $log.info e.message
         exit 1
       end
     else
-      $log.info "No configuration file #{f} found."
+      $log.info "No configuration file #{f} found. Asking interactively\n"
     end
     # Make sure configf["default"] exists
     configf["default"] ||= {}
