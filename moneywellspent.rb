@@ -1,13 +1,18 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
 
-require 'rubygems'
-require 'optparse'
-require 'yaml'
-require 'highline/import'
-require 'mechanize'
-require 'bigdecimal'
-require 'logger'
+begin
+  require 'rubygems'
+  require 'optparse'
+  require 'yaml'
+  require 'highline/import'
+  require 'mechanize'
+  require 'bigdecimal'
+  require 'logger'
+rescue LoadError => err
+  puts "Gem missing:\n #{err}"
+  exit 1
+end
 
 # Logger
 $log = Logger.new(STDOUT)
