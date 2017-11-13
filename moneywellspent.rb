@@ -35,6 +35,7 @@ class MoneyWellSpent
 
     $log.debug "DEBUG: Accessing #{@@cfg[:url]}\n"
     page = agent.get(@@cfg[:url])
+    $log.debug "DEBUG: Login page body\n#{page.body}\n"
     login_form = page.form('signIn')
     login_form.email = @@cfg[:login]
     login_form.password = @@cfg[:password]
@@ -42,7 +43,7 @@ class MoneyWellSpent
     # Login
     $log.info "Logging in to amazon.#{@@cfg[:site]}\n"
     page = agent.submit(login_form, login_form.buttons.last)
-    $log.debug "DEBUG: Page body\n#{page.body}\n"
+    $log.debug "DEBUG: First order page body\n#{page.body}\n"
 
     # Get first page of orders
     $log.info "Retrieving order history"
