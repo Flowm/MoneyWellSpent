@@ -1,0 +1,8 @@
+# Example optional configuration file
+# Move to ~/.moneywellspentrc to use
+# Delete the password line to only save the other settings on disk
+default:
+  :site: amazon.de
+  :login: your.email@example.org
+  :password: YourPassword
+  :year: 2017
