@@ -111,7 +111,9 @@ class MoneyWellSpent
     # Output
     sum = BigDecimal("0")
     data.each do |date, price|
-      puts "#{date}   #{'%10.2f'%price}"
+      unless @@cfg[:overview]
+        puts "#{date}   #{'%10.2f'%price}"
+      end
       sum += price
     end
     puts "Overall #{@@cfg[:year]}:#{'%10.2f'%sum}"
@@ -162,6 +164,9 @@ class MoneyWellSpent
         "Specify the site to be queried. " +
         "Currently amazon.{com,de,fr,co.uk} are supported") do |site|
         attrs[:site] = site
+      end
+      opts.on("-o", "--overview", "Show overview only") do
+        attrs[:overview] = true
       end
       opts.on("-c [CSV]", "--csv [CSV]",
         "Export data to CSV") do |csv|
