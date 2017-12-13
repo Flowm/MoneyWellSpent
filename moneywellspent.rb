@@ -74,7 +74,10 @@ class MoneyWellSpent
 
     # Delocalization
     data = []
-    strdata.each do |strdate, strprice|
+    strdata.each do |strdata_item|
+      strdate = strdata_item[0]
+      strprice = @@cfg[:account_type] == 'business'.freeze ? strdata_item[2] : strdata_item[1]
+
       # Date delocalization
       if %w(de).include? @@cfg[:site]
         strdate.gsub!(/Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember/,
@@ -95,7 +98,13 @@ class MoneyWellSpent
 
       # Prize delocalization
       if %w(de fr).include? @@cfg[:site]
-        strprice = strprice.gsub(/\./,'').scan(/EUR\s(\d+,\d\d)/).first.first.gsub(/,/, '.')
+        price = strprice.gsub(/\./,'').scan(/EUR\s(\d+,\d\d)/)
+        if price.first.nil?
+          $log.warn "\nError parsing prices from order page\n" +
+            "Is the supplied account type (#{@@cfg[:account_type]}) correct?\n"
+          exit 1
+        end
+        strprice = price.first.first.gsub(/,/, '.')
       elsif %w(com).include? @@cfg[:site]
         strprice = strprice.gsub(/,/,'').scan(/\$(\d+\.\d\d)/).first.first
       elsif %w(co.uk).include? @@cfg[:site]
@@ -161,6 +170,14 @@ class MoneyWellSpent
         "Specify the year to be summed up") do |year|
         attrs[:year] = year
       end
+      opts.on("-a [ACCOUNT TYPE]", "--account-type", "Specify account type (private or business) of your Amazon account") do |account_type|
+        unless %(private business).include? account_type
+          puts "Account type #{account_type} not supported."
+          puts "Currently are only private or business acoounts supported."
+          exit 1
+        end
+        attrs[:account_type] = account_type
+      end
       opts.on("-s [SITE]", "--site [SITE]",
         "Specify the site to be queried. " +
         "Currently amazon.{com,de,fr,co.uk} are supported") do |site|
@@ -223,6 +240,10 @@ class MoneyWellSpent
       @@cfg[:password] = ask("Enter your #{@@cfg[:site]} password:  ") { |q|
         q.echo = "*"
       }
+    end
+    unless @@cfg[:account_type]
+      $log.debug "No account type given, set account type to private"
+      @@cfg[:account_type] = 'private'.freeze
     end
     unless @@cfg[:year]
       $log.debug "No year given, asking"
