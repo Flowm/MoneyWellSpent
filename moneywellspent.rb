@@ -170,10 +170,11 @@ class MoneyWellSpent
         "Specify the year to be summed up") do |year|
         attrs[:year] = year
       end
-      opts.on("-a [ACCOUNT TYPE]", "--account-type", "Specify account type (private or business) of your Amazon account") do |account_type|
+      opts.on("-a [ACCOUNT]", "--account-type [ACCOUNT]",
+        "Specify account type (private or business) of your Amazon account") do |account_type|
         unless %(private business).include? account_type
           puts "Account type #{account_type} not supported."
-          puts "Currently are only private or business acoounts supported."
+          puts "Currently only private or business accounts are supported."
           exit 1
         end
         attrs[:account_type] = account_type
