@@ -5,4 +5,5 @@ default:
   :site: amazon.de
   :login: your.email@example.org
   :password: YourPassword
+  :account_type: private
   :year: 2017
