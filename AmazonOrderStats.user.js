@@ -47,6 +47,7 @@ function mergeOrders() {
     return orders;
 }
 
+let Buttons = {};
 function addButton(text, onclick, cssObj) {
     cssObj = cssObj || {position: 'absolute', bottom: '7%', left:'4%', 'z-index': 10}
     let button = document.createElement('button')
@@ -54,7 +55,41 @@ function addButton(text, onclick, cssObj) {
     button.innerHTML = text
     button.onclick = onclick
     Object.keys(cssObj).forEach(style => {button.style[style] = cssObj[style]})
+    Buttons[text] = button;
     return button
+}
+
+function nextPage() {
+    // Click on next page button if it exists
+    const nextBtn = document.querySelector("ul.a-pagination li.a-last a");
+    if (nextBtn) {
+        nextBtn.click();
+        return;
+    }
+
+    // Select next year
+    const timePeriodForm = document.querySelector("div.top-controls form#timePeriodForm");
+    // console.log(timePeriodForm);
+    const currentIndex = timePeriodForm.querySelector("select#orderFilter").selectedIndex;
+
+    // Open dropdown
+    timePeriodForm.querySelector("span.order-filter-dropdown #a-autoid-1-announce").click();
+
+    // Click on next year
+    setTimeout(function(){ document.querySelector(`a#orderFilter_${currentIndex + 1}`).click() }, 10);
+}
+
+function allPagesStart() {
+    localStorage.setItem("allpages", true);
+    nextPage();
+}
+
+function allPagesStop() {
+    localStorage.removeItem("allpages");
+    const stopButton = Buttons["All Pages STOP"];
+    stopButton.parentNode.removeChild(stopButton)
+    delete Buttons["All Pages STOP"];
+    addButton("All Pages START", () => { allPagesStart() }, {position: 'absolute', bottom: '20%', left:'2%', 'z-index': 10});
 }
 
 function exportCSV(data) {
@@ -73,7 +108,16 @@ function exportCSV(data) {
 (function() {
     'use strict';
     const orders = mergeOrders();
-    console.log(orders);
+    // console.log(orders);
+
+    // Add Buttons
+    if (localStorage.getItem("allpages")) {
+        addButton("All Pages STOP", () => { allPagesStop() }, {position: 'absolute', bottom: '20%', left:'2%', 'z-index': 10});
+        setTimeout(() => { if (localStorage.getItem("allpages")) nextPage() }, Math.floor(Math.random() * (2000 - 1000)) + 1000);
+    } else {
+        addButton("All Pages START", () => { allPagesStart() }, {position: 'absolute', bottom: '20%', left:'2%', 'z-index': 10});
+    }
+    addButton("Next Page", () => { nextPage() }, {position: 'absolute', bottom: '15%', left:'2%', 'z-index': 10});
     addButton("Export", () => { exportCSV(orders) }, {position: 'absolute', bottom: '10%', left:'2%', 'z-index': 10});
     addButton("Clear", () => { localStorage.clear() }, {position: 'absolute', bottom: '5%', left:'2%', 'z-index': 10});
 })();
